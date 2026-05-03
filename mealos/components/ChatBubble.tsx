@@ -17,26 +17,24 @@ export default function ChatBubble({ message }: ChatBubbleProps) {
       <div className={`max-w-[80%] ${isUser ? "items-end" : "items-start"} flex flex-col gap-3`}>
         {/* Role label */}
         <span
-          className="text-xs font-black uppercase tracking-widest px-2 py-0.5 border-2 border-black"
+          className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 border-2 border-black rounded-md"
           style={{
-            backgroundColor: isUser ? "#3A86FF" : "#FF3B3B",
-            color: "#fff",
+            backgroundColor: isUser ? "var(--blue)" : "var(--red)",
+            color: "#000",
           }}
         >
-          {isUser ? "YOU" : "MEALOS AI"}
+          {isUser ? "You" : "MealOS AI"}
         </span>
 
         {/* Text bubble */}
         {message.text && (
           <div
-            className="px-4 py-3 border-4 border-black font-bold text-base text-black"
+            className="px-4 py-3 border-2 border-black font-medium text-base text-black rounded-xl"
             style={{
-              backgroundColor: isUser ? "#3A86FF" : "#FF3B3B",
+              backgroundColor: isUser ? "var(--blue)" : "var(--red)",
               boxShadow: isUser
-                ? "-5px 5px 0px #000"
-                : "5px 5px 0px #000",
-              color: "#fff",
-              letterSpacing: "0.01em",
+                ? "-3px 3px 0px #000"
+                : "3px 3px 0px #000",
             }}
           >
             {message.text}

@@ -8,22 +8,22 @@ interface DecisionCardProps {
 
 const typeConfig = {
   food: {
-    bg: "#FFD60A",
-    label: "🍔 SWIGGY / ZOMATO",
+    bg: "var(--yellow)",
+    label: "🍔 Swiggy / Zomato",
     labelBg: "#000",
-    labelColor: "#FFD60A",
+    labelColor: "var(--yellow)",
   },
   instamart: {
-    bg: "#06D6A0",
-    label: "🛒 INSTAMART",
+    bg: "var(--green)",
+    label: "🛒 Instamart",
     labelBg: "#000",
-    labelColor: "#06D6A0",
+    labelColor: "var(--green)",
   },
   dineout: {
-    bg: "#FF85A1",
-    label: "🍽️ DINEOUT",
+    bg: "var(--pink)",
+    label: "🍽️ Dineout",
     labelBg: "#000",
-    labelColor: "#FF85A1",
+    labelColor: "var(--pink)",
   },
 };
 
@@ -32,24 +32,24 @@ export default function DecisionCard({ card }: DecisionCardProps) {
 
   return (
     <div
-      className="w-56 border-4 border-black flex flex-col"
+      className="w-56 border-2 border-black rounded-xl overflow-hidden flex flex-col"
       style={{
         backgroundColor: cfg.bg,
-        boxShadow: "6px 6px 0px #000",
+        boxShadow: "3px 3px 0px #000",
       }}
     >
       {/* Type badge */}
       <div
-        className="px-3 py-1 text-xs font-black uppercase tracking-wider border-b-4 border-black"
+        className="px-3 py-1.5 text-xs font-bold uppercase tracking-wide border-b-2 border-black"
         style={{ backgroundColor: cfg.labelBg, color: cfg.labelColor }}
       >
         {cfg.label}
       </div>
 
       {/* Card body */}
-      <div className="p-3 flex flex-col gap-2">
+      <div className="p-4 flex flex-col gap-3">
         {/* Name */}
-        <p className="text-base font-black uppercase leading-tight text-black">
+        <p className="text-base font-bold leading-tight text-black">
           {card.name}
         </p>
 
@@ -59,7 +59,7 @@ export default function DecisionCard({ card }: DecisionCardProps) {
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase text-black/70">Price</span>
               <span
-                className="px-2 py-0.5 border-2 border-black text-sm font-black text-black"
+                className="px-2 py-0.5 border-2 border-black rounded-md text-sm font-bold text-black"
                 style={{ backgroundColor: "#fff" }}
               >
                 ₹{card.price}
@@ -68,8 +68,8 @@ export default function DecisionCard({ card }: DecisionCardProps) {
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase text-black/70">Delivery</span>
               <span
-                className="px-2 py-0.5 border-2 border-black text-sm font-black text-black"
-                style={{ backgroundColor: "#3A86FF", color: "#fff" }}
+                className="px-2 py-0.5 border-2 border-black rounded-md text-sm font-bold text-black"
+                style={{ backgroundColor: "var(--blue)", color: "#000" }}
               >
                 {card.deliveryTime}
               </span>
@@ -81,22 +81,22 @@ export default function DecisionCard({ card }: DecisionCardProps) {
         {card.type === "instamart" && card.ingredients && (
           <>
             <div>
-              <p className="text-xs font-black uppercase text-black/70 mb-1">Ingredients</p>
+              <p className="text-xs font-bold uppercase text-black/70 mb-1">Ingredients</p>
               <ul className="flex flex-wrap gap-1">
                 {card.ingredients.map((ing, i) => (
                   <li
                     key={i}
-                    className="text-xs px-1.5 py-0.5 border-2 border-black font-bold bg-white text-black"
+                    className="text-xs px-1.5 py-0.5 border-2 border-black rounded-md font-medium bg-white text-black"
                   >
                     {ing}
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="flex items-center justify-between mt-1">
+            <div className="flex items-center justify-between mt-2">
               <span className="text-xs font-bold uppercase text-black/70">Total Cost</span>
               <span
-                className="px-2 py-0.5 border-2 border-black text-sm font-black text-black"
+                className="px-2 py-0.5 border-2 border-black rounded-md text-sm font-bold text-black"
                 style={{ backgroundColor: "#fff" }}
               >
                 ₹{card.totalCost}
@@ -111,11 +111,11 @@ export default function DecisionCard({ card }: DecisionCardProps) {
             <div className="flex items-center gap-1">
               <span className="text-xs font-bold uppercase text-black/70">Restaurant</span>
             </div>
-            <p className="text-sm font-black text-black">{card.restaurant}</p>
+            <p className="text-sm font-medium text-black">{card.restaurant}</p>
             {card.offer && (
               <div
-                className="px-2 py-1 border-2 border-black text-xs font-black uppercase text-black"
-                style={{ backgroundColor: "#FFD60A" }}
+                className="px-2 py-1 border-2 border-black rounded-md text-xs font-bold text-black mt-1"
+                style={{ backgroundColor: "var(--yellow)" }}
               >
                 🎉 {card.offer}
               </div>
@@ -125,12 +125,12 @@ export default function DecisionCard({ card }: DecisionCardProps) {
       </div>
 
       {/* CTA */}
-      <div className="mt-auto border-t-4 border-black">
+      <div className="mt-auto border-t-2 border-black">
         <button
           id={`card-cta-${card.name.replace(/\s+/g, "-").toLowerCase()}`}
-          className="w-full py-2 font-black uppercase text-sm text-black bg-white hover:bg-black hover:text-white transition-colors duration-100 tracking-wider"
+          className="w-full py-3 font-bold text-sm text-black bg-white hover:bg-black hover:text-white transition-colors duration-100"
         >
-          ORDER NOW →
+          Order Now →
         </button>
       </div>
     </div>

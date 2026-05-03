@@ -8,17 +8,16 @@ export default function Navbar() {
 
   return (
     <nav
-      className="w-full border-b-4 border-black sticky top-0 z-50"
-      style={{ backgroundColor: "#FFD60A" }}
+      className="w-full border-b-2 border-black sticky top-0 z-50 bg-white"
     >
       <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group">
           <div
-            className="w-10 h-10 border-4 border-black flex items-center justify-center font-black text-lg"
+            className="w-10 h-10 border-2 border-black rounded-lg flex items-center justify-center font-black text-lg"
             style={{
-              backgroundColor: "#FF3B3B",
-              boxShadow: "3px 3px 0px #000",
+              backgroundColor: "var(--red)",
+              boxShadow: "2px 2px 0px #000",
               transition: "transform 0.1s, box-shadow 0.1s",
             }}
           >
@@ -30,8 +29,8 @@ export default function Navbar() {
           >
             MealOS
             <span
-              className="ml-1 px-1 text-xs font-black border-2 border-black align-middle"
-              style={{ backgroundColor: "#000", color: "#FFD60A" }}
+              className="ml-1 px-2 py-0.5 rounded-md text-xs font-bold border-2 border-black align-middle"
+              style={{ backgroundColor: "#000", color: "var(--yellow)" }}
             >
               AI
             </span>
@@ -43,13 +42,14 @@ export default function Navbar() {
           <Link
             href="/"
             id="nav-home"
-            className="px-3 py-1 font-black uppercase text-sm border-2 border-transparent hover:border-black transition-all"
+            className="px-4 py-1.5 font-bold text-sm border-2 border-transparent rounded-lg hover:border-black transition-all"
             style={
               pathname === "/"
                 ? {
-                    backgroundColor: "#000",
-                    color: "#FFD60A",
+                    backgroundColor: "var(--yellow)",
+                    color: "#000",
                     border: "2px solid #000",
+                    boxShadow: "2px 2px 0px #000",
                   }
                 : { color: "#000" }
             }
@@ -59,13 +59,14 @@ export default function Navbar() {
           <Link
             href="/chat"
             id="nav-chat"
-            className="px-3 py-1 font-black uppercase text-sm border-2 border-transparent hover:border-black transition-all"
+            className="px-4 py-1.5 font-bold text-sm border-2 border-transparent rounded-lg hover:border-black transition-all"
             style={
               pathname === "/chat"
                 ? {
-                    backgroundColor: "#000",
-                    color: "#FFD60A",
+                    backgroundColor: "var(--yellow)",
+                    color: "#000",
                     border: "2px solid #000",
+                    boxShadow: "2px 2px 0px #000",
                   }
                 : { color: "#000" }
             }

@@ -1,12 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 :root {
-  --bg: #FDF6E3;
-  --yellow: #FFD60A;
-  --red: #FF3B3B;
-  --blue: #3A86FF;
-  --green: #06D6A0;
-  --pink: #FF85A1;
+  --bg: #FBF8F1;
+  --yellow: #FBE06D;
+  --red: #FF9494;
+  --blue: #8CB4F8;
+  --green: #A1F26E;
+  --pink: #FFB3C6;
   --black: #000000;
 }
 
@@ -17,7 +18,7 @@
 html,
 body {
   background-color: var(--bg);
-  font-family: 'Arial Black', 'Impact', sans-serif;
+  font-family: 'Inter', sans-serif;
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;

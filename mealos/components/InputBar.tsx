@@ -23,8 +23,7 @@ export default function InputBar({ onSend, disabled = false }: InputBarProps) {
 
   return (
     <div
-      className="w-full border-t-4 border-black flex items-stretch gap-0"
-      style={{ backgroundColor: "#FDF6E3" }}
+      className="w-full border-t-2 border-black flex items-center gap-2 p-2 bg-white"
     >
       <input
         id="chat-input"
@@ -33,11 +32,11 @@ export default function InputBar({ onSend, disabled = false }: InputBarProps) {
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
         disabled={disabled}
-        placeholder="WHAT DO YOU WANT TO EAT?"
-        className="flex-1 px-5 py-4 font-black text-base uppercase border-r-4 border-black outline-none text-black placeholder:text-black/30"
+        placeholder="What do you want to eat?"
+        className="flex-1 px-4 py-3 font-medium text-base outline-none text-black placeholder:text-black/40 rounded-lg border-2 border-black"
         style={{
           backgroundColor: "#fff",
-          letterSpacing: "0.04em",
+          boxShadow: "inset 2px 2px 0px rgba(0,0,0,0.05)",
         }}
         aria-label="Chat input"
       />
@@ -45,15 +44,16 @@ export default function InputBar({ onSend, disabled = false }: InputBarProps) {
         id="chat-send-button"
         onClick={handleSend}
         disabled={disabled || !value.trim()}
-        className="px-6 py-4 font-black uppercase text-sm tracking-widest border-0 text-black transition-all duration-100"
+        className="px-6 py-3 font-bold text-sm tracking-wide border-2 border-black rounded-lg text-black transition-all duration-100"
         style={{
-          backgroundColor: "#FFD60A",
+          backgroundColor: "var(--yellow)",
+          boxShadow: "2px 2px 0px #000",
           cursor: disabled || !value.trim() ? "not-allowed" : "pointer",
           opacity: disabled ? 0.6 : 1,
         }}
         onMouseDown={(e) => {
           const btn = e.currentTarget;
-          btn.style.transform = "translate(2px, 2px)";
+          if (!disabled && value.trim()) btn.style.transform = "translate(2px, 2px)";
         }}
         onMouseUp={(e) => {
           const btn = e.currentTarget;
@@ -61,7 +61,7 @@ export default function InputBar({ onSend, disabled = false }: InputBarProps) {
         }}
         aria-label="Send message"
       >
-        SEND →
+        Send →
       </button>
     </div>
   );

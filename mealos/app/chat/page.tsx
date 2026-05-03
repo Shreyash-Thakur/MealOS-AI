@@ -11,7 +11,7 @@ import { Message } from "@/lib/types";
 const WELCOME_MESSAGE: Message = {
   id: "welcome",
   role: "ai",
-  text: "YO. TELL ME WHAT YOU FEEL LIKE EATING. I'LL SORT IT OUT.",
+  text: "Yo. Tell me what you feel like eating. I'll sort it out.",
 };
 
 const SUGGESTIONS = [
@@ -69,7 +69,7 @@ function ChatContent() {
       {/* ─── Messages area ────────────────────────── */}
       <div
         className="flex-1 overflow-y-auto px-4 py-6"
-        style={{ backgroundColor: "#FDF6E3" }}
+        style={{ backgroundColor: "var(--bg)" }}
         id="chat-messages-area"
       >
         <div className="max-w-3xl mx-auto flex flex-col gap-2">
@@ -82,17 +82,17 @@ function ChatContent() {
             <div className="flex justify-start mb-4">
               <div className="flex flex-col gap-1 items-start">
                 <span
-                  className="text-xs font-black uppercase tracking-widest px-2 py-0.5 border-2 border-black"
-                  style={{ backgroundColor: "#FF3B3B", color: "#fff" }}
+                  className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 border-2 border-black rounded-md"
+                  style={{ backgroundColor: "var(--red)", color: "#000" }}
                 >
-                  MEALOS AI
+                  MealOS AI
                 </span>
                 <div
-                  className="px-5 py-3 border-4 border-black font-black text-base uppercase tracking-widest"
+                  className="px-5 py-3 border-2 border-black font-medium text-base rounded-xl"
                   style={{
-                    backgroundColor: "#FF3B3B",
-                    boxShadow: "5px 5px 0px #000",
-                    color: "#fff",
+                    backgroundColor: "var(--red)",
+                    boxShadow: "3px 3px 0px #000",
+                    color: "#000",
                   }}
                 >
                   <ThinkingDots />
@@ -108,7 +108,7 @@ function ChatContent() {
       {/* ─── Suggestions ──────────────────────────── */}
       {messages.length <= 1 && !thinking && (
         <div
-          className="border-t-4 border-black px-4 py-3 overflow-x-auto"
+          className="border-t-2 border-black px-4 py-3 overflow-x-auto"
           style={{ backgroundColor: "#fff" }}
         >
           <div className="flex gap-2 flex-wrap max-w-3xl mx-auto">
@@ -117,8 +117,8 @@ function ChatContent() {
                 key={s}
                 id={`suggestion-${s.replace(/\s+/g, "-").toLowerCase()}`}
                 onClick={() => handleSend(s)}
-                className="px-3 py-1.5 border-2 border-black font-black text-xs uppercase tracking-wider hover:bg-black hover:text-yellow-400 transition-colors duration-100"
-                style={{ backgroundColor: "#FFD60A" }}
+                className="px-3 py-1.5 border-2 border-black rounded-lg font-bold text-xs tracking-wide hover:bg-black hover:text-white transition-colors duration-100"
+                style={{ backgroundColor: "var(--bg)" }}
               >
                 {s}
               </button>
@@ -136,12 +136,12 @@ function ChatContent() {
 function ThinkingDots() {
   return (
     <span className="inline-flex items-center gap-1">
-      THINKING
+      Thinking
       <span className="inline-flex gap-0.5 ml-1">
         {[0, 1, 2].map((i) => (
           <span
             key={i}
-            className="w-2 h-2 bg-white border border-white"
+            className="w-1.5 h-1.5 bg-black rounded-full"
             style={{
               animation: `pulse 1s ease-in-out ${i * 0.2}s infinite`,
             }}
