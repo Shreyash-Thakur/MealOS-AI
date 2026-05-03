@@ -74,8 +74,7 @@ export default function LandingPage() {
 
           {/* Description */}
           <p className="text-lg font-medium text-black/70 max-w-md">
-            Stop wasting time. MealOS AI reads your mood and picks the perfect
-            meal — delivery, groceries, or dineout.
+            Stop scrolling endlessly. MealOS AI acts as your personal food concierge — finding the perfect meal via Swiggy Food, ingredients on Swiggy Instamart, or booking tables with Swiggy Dineout.
           </p>
 
           {/* CTA */}
@@ -114,25 +113,57 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ─── How it Works ──────────────────────────── */}
+      <section className="bg-white border-t-2 border-black py-16 px-4">
+        <div className="max-w-4xl mx-auto flex flex-col items-center text-center gap-10">
+          <h2 className="text-3xl font-black tracking-tight">How It Works</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="flex flex-col items-center gap-4 group">
+              <div className="w-16 h-16 rounded-full border-2 border-black bg-white flex items-center justify-center text-2xl font-bold shadow-[4px_4px_0px_var(--yellow)] group-hover:translate-y-1 group-hover:shadow-none transition-all">
+                1
+              </div>
+              <h3 className="font-bold text-lg">Tell Us Your Vibe</h3>
+              <p className="text-sm font-medium text-black/70">Type in exactly what you want, like "healthy under 300" or "date night spots".</p>
+            </div>
+            <div className="flex flex-col items-center gap-4 group">
+              <div className="w-16 h-16 rounded-full border-2 border-black bg-white flex items-center justify-center text-2xl font-bold shadow-[4px_4px_0px_var(--green)] group-hover:translate-y-1 group-hover:shadow-none transition-all">
+                2
+              </div>
+              <h3 className="font-bold text-lg">AI Computes</h3>
+              <p className="text-sm font-medium text-black/70">MealOS AI scours Swiggy's entire ecosystem to find your perfect match instantly.</p>
+            </div>
+            <div className="flex flex-col items-center gap-4 group">
+              <div className="w-16 h-16 rounded-full border-2 border-black bg-white flex items-center justify-center text-2xl font-bold shadow-[4px_4px_0px_var(--pink)] group-hover:translate-y-1 group-hover:shadow-none transition-all">
+                3
+              </div>
+              <h3 className="font-bold text-lg">Order & Enjoy</h3>
+              <p className="text-sm font-medium text-black/70">Pick the best card and order with one click. It's really that simple.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ─── Feature strip ─────────────────────────── */}
       <section
         className="border-t-2 border-black grid grid-cols-1 md:grid-cols-3"
       >
         {[
-          { color: "var(--yellow)", icon: "🛵", title: "DELIVERY", desc: "Order from Swiggy or Zomato in seconds" },
-          { color: "var(--green)", icon: "🛒", title: "GROCERIES", desc: "Get ingredients via Instamart. Cook it fresh." },
-          { color: "var(--pink)", icon: "🍽️", title: "DINEOUT", desc: "Find the best table in town, right now" },
+          { color: "var(--yellow)", icon: "🛵", title: "SWIGGY FOOD", desc: "Get lightning fast food delivery directly to your door." },
+          { color: "var(--green)", icon: "🛒", title: "SWIGGY INSTAMART", desc: "Craving a home-cooked meal? Ingredients in 10 mins." },
+          { color: "var(--pink)", icon: "🍽️", title: "SWIGGY DINEOUT", desc: "Reserve the best tables and get exclusive offers." },
         ].map((f, i) => (
           <div
             key={i}
-            className="flex flex-col items-center gap-3 px-8 py-10 border-b-2 md:border-b-0 md:border-r-2 border-black last:border-r-0 last:border-b-0"
+            className="flex flex-col items-center gap-4 px-8 py-12 border-b-2 md:border-b-0 md:border-r-2 border-black last:border-r-0 last:border-b-0 cursor-pointer hover:bg-black group transition-colors duration-300"
             style={{ backgroundColor: f.color }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#000'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = f.color; }}
           >
-            <span className="text-5xl drop-shadow-md">{f.icon}</span>
-            <h2 className="text-xl font-bold tracking-wide text-black">
+            <span className="text-5xl drop-shadow-md group-hover:scale-110 transition-transform duration-300">{f.icon}</span>
+            <h2 className="text-xl font-bold tracking-wide text-black group-hover:text-white transition-colors duration-300">
               {f.title}
             </h2>
-            <p className="text-sm font-medium text-black/70 text-center">
+            <p className="text-sm font-medium text-black/70 text-center group-hover:text-white/70 transition-colors duration-300">
               {f.desc}
             </p>
           </div>

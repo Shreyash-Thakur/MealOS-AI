@@ -61,12 +61,12 @@ mealos/
 
 | Input contains         | Response                          |
 |------------------------|-----------------------------------|
-| `healthy` / `under 300`| 2 food cards + 1 Instamart card  |
-| `date night`           | 1 Dineout card                    |
-| `pizza`                | 2 food cards                      |
-| `biryani`              | 1 food + 1 Instamart              |
-| `lunch` / `quick`      | 2 fast food cards                 |
-| `budget` / `cheap`     | 2 cheap food + 1 Instamart        |
+| `healthy` / `under 300`| 2 Swiggy Food cards + 1 Instamart card  |
+| `date night`           | 1 Swiggy Dineout card                    |
+| `pizza`                | 2 Swiggy Food cards                      |
+| `biryani`              | 1 Swiggy Food + 1 Instamart              |
+| `lunch` / `quick`      | 2 fast Swiggy Food cards                 |
+| `budget` / `cheap`     | 2 cheap Swiggy Food + 1 Instamart        |
 | *(anything else)*      | Default mixed recommendation       |
 
 ---

@@ -9,19 +9,19 @@ interface DecisionCardProps {
 const typeConfig = {
   food: {
     bg: "var(--yellow)",
-    label: "🍔 Swiggy / Zomato",
+    label: "🍔 Swiggy Food",
     labelBg: "#000",
     labelColor: "var(--yellow)",
   },
   instamart: {
     bg: "var(--green)",
-    label: "🛒 Instamart",
+    label: "🛒 Swiggy Instamart",
     labelBg: "#000",
     labelColor: "var(--green)",
   },
   dineout: {
     bg: "var(--pink)",
-    label: "🍽️ Dineout",
+    label: "🍽️ Swiggy Dineout",
     labelBg: "#000",
     labelColor: "var(--pink)",
   },
