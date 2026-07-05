@@ -1,0 +1,420 @@
+// prisma/schema.prisma
+// MealOS AI — Production Database Schema (V1)
+//
+// Tech: PostgreSQL (Neon) · Prisma ORM · Clerk for auth
+// V1 tables: users, user_memory_facts, situations, recommendations, user_actions
+// V2 tables: defined in docs/DATABASE.md, not implemented here
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// How a memory fact was learned about the user.
+/// ONBOARDING: collected during the first-run onboarding flow.
+/// CLARIFICATION: extracted from a user's answer to a clarification question.
+/// AGENT_INFERRED: derived by the Memory Agent from observed behavior or stated patterns.
+/// USER_EDITED: the user manually corrected or updated a fact via the Memory Panel.
+enum MemorySource {
+  ONBOARDING     @map("onboarding")
+  CLARIFICATION  @map("clarification")
+  AGENT_INFERRED @map("agent_inferred")
+  USER_EDITED    @map("user_edited")
+
+  @@map("memory_source")
+}
+
+/// The broad category of the user's food situation, classified by the Conversation Agent.
+/// Maps to the situationType field in the SituationContext JSONB column.
+enum SituationType {
+  SICK           @map("sick")
+  BROKE          @map("broke")
+  DATE_PLANNING  @map("date_planning")
+  PARTY          @map("party")
+  MEAL_PREP      @map("meal_prep")
+  QUICK_MEAL     @map("quick_meal")
+  NUTRITION_GOAL @map("nutrition_goal")
+  CRAVING        @map("craving")
+  PLANNING       @map("planning")
+  GROUP_EVENT    @map("group_event")
+
+  @@map("situation_type")
+}
+
+/// State machine for a situation's lifecycle.
+/// Transitions: CREATED → CLARIFYING → CONTEXT_READY → PLANNING → PLAN_READY
+///            → EXECUTING → COMPLETED | ABANDONED
+/// ABANDONED: user navigated away, timed out, or the agent pipeline failed unrecoverably.
+enum SituationStatus {
+  CREATED       @map("created")
+  CLARIFYING    @map("clarifying")
+  CONTEXT_READY @map("context_ready")
+  PLANNING      @map("planning")
+  PLAN_READY    @map("plan_ready")
+  EXECUTING     @map("executing")
+  COMPLETED     @map("completed")
+  ABANDONED     @map("abandoned")
+
+  @@map("situation_status")
+}
+
+/// The winning solution path selected by the deterministic TypeScript scoring engine.
+/// COOK: the system recommends cooking at home, optionally with Instamart ingredients.
+/// ORDER: the system recommends ordering delivery via Swiggy Food.
+/// DINE_OUT: the system recommends dining at a restaurant via Swiggy Dineout.
+enum PrimaryPath {
+  COOK     @map("cook")
+  ORDER    @map("order")
+  DINE_OUT @map("dine_out")
+
+  @@map("primary_path")
+}
+
+/// What the user did after receiving a recommendation.
+/// EXECUTED_COOK: user confirmed they are cooking.
+/// EXECUTED_ORDER: user tapped "Order Now", triggering a Swiggy deep link.
+/// EXECUTED_DINEOUT: user tapped "Book Table", triggering a Swiggy Dineout booking.
+/// DISMISSED: user closed the board without taking action.
+/// MODIFIED: user edited the plan (e.g., swapped the primary item for an alternative).
+enum ActionType {
+  EXECUTED_COOK    @map("executed_cook")
+  EXECUTED_ORDER   @map("executed_order")
+  EXECUTED_DINEOUT @map("executed_dineout")
+  DISMISSED        @map("dismissed")
+  MODIFIED         @map("modified")
+
+  @@map("action_type")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TABLE: users
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Extension table for Clerk's identity system.
+/// One row is created per user on their first authenticated request,
+/// typically via a Clerk webhook (user.created event) or the POST /api/v1/users/sync endpoint.
+/// clerk_id is the stable cross-service identifier; our UUID id is used for all FK relationships.
+model User {
+  id           String    @id @default(uuid())
+  /// Clerk's user ID string, e.g. "user_2NNiSlFa1b2c3d4e5f6g7h8". Used in auth middleware on every request.
+  clerkId      String    @unique @map("clerk_id")
+  email        String    @unique
+  name         String?
+  /// E.164 format optional. Used for SMS notifications in V2.
+  phone        String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  /// Updated on each authenticated request. Used for DAU/WAU analytics and session cleanup.
+  lastActiveAt DateTime? @map("last_active_at")
+
+  // Relations
+  memoryFacts     UserMemoryFact[]
+  situations      Situation[]
+  recommendations Recommendation[]
+  actions         UserAction[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TABLE: user_memory_facts
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Key-value store for structured user facts. Each row is one atomic, addressable fact.
+/// Written by: onboarding flow, clarification answer processing, Memory Agent (post-execution).
+/// Read by: Context Agent (pre-planning), Clarification Engine (to avoid redundant questions).
+///
+/// Standard fact keys and their fact_value shapes:
+///
+///   "dietary.restrictions"        → string[]    e.g. ["vegetarian", "no-onion"]
+///   "dietary.allergies"           → string[]    e.g. ["shellfish", "peanuts"]
+///   "budget.daily_food_target"    → number      e.g. 350   (INR)
+///   "budget.dining_out_per_outing"→ number      e.g. 2500  (INR)
+///   "location.home"               → string      e.g. "Bandra, Mumbai"
+///   "location.work"               → string      e.g. "BKC, Mumbai"
+///   "kitchen.skill_level"         → string      "beginner" | "intermediate" | "advanced"
+///   "kitchen.equipment"           → string[]    e.g. ["gas stove", "oven", "mixer"]
+///   "household.size"              → number      e.g. 2
+///   "fitness.protein_target"      → number      e.g. 150  (grams/day)
+///   "fitness.calorie_target"      → number      e.g. 2200 (kcal/day)
+///   "fitness.gym_days"            → string[]    e.g. ["Monday", "Wednesday", "Friday"]
+///   "preference.cuisines.liked"   → string[]    e.g. ["South Indian", "Italian"]
+///   "preference.cuisines.disliked"→ string[]    e.g. ["Very spicy food"]
+///   "pantry.staples"              → string[]    e.g. ["rice", "dal", "oil", "salt"]
+///   "ordering.frequent_restaurants"→ string[]   e.g. ["Behrouz Biryani", "Wow Momo"]
+model UserMemoryFact {
+  id             String       @id @default(uuid())
+  userId         String       @map("user_id")
+  /// Dot-notation key identifying the fact. See model comment for the standard key registry.
+  factKey        String       @map("fact_key")
+  /// JSON value. Shape varies by factKey. See model comment for per-key shapes.
+  factValue      Json         @map("fact_value")
+  source         MemorySource
+  /// Confidence 0.0–1.0. ONBOARDING and USER_EDITED start at 1.0.
+  /// AGENT_INFERRED starts at 0.7 and increases by 0.05 with each confirmation, capped at 0.95.
+  confidence     Float        @default(1.0)
+  /// Incremented each time the user or an agent confirms this fact without contradiction.
+  timesConfirmed Int          @default(1) @map("times_confirmed")
+  lastConfirmedAt DateTime?   @map("last_confirmed_at")
+  /// Null for permanent facts (dietary, allergies, location).
+  /// Set for soft facts: budget targets expire after 30 days, pantry items after 14 days.
+  expiresAt      DateTime?    @map("expires_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// The (userId, factKey) pair must be unique. Use upsert on this pair for all writes.
+  @@unique([userId, factKey])
+  @@index([userId, factKey])
+  @@index([userId, expiresAt])
+  @@map("user_memory_facts")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TABLE: situations
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// The core event. One row per user food situation submission.
+/// Written: when the user submits input via POST /api/v1/situations.
+/// Updated: at every state machine transition by the agent pipeline.
+/// Read: throughout the pipeline, on board display, and for history.
+///
+/// context JSONB shape (TypeScript: SituationContext):
+/// {
+///   situationType: string;
+///   explicit: {
+///     proteinTarget?: number;       // grams
+///     budget?: number;              // INR
+///     canCook?: boolean;
+///     alone?: boolean;
+///     guestCount?: number;
+///     timeConstraintMin?: number;
+///     craving?: string;
+///     location?: string;
+///     occasion?: string;
+///   };
+///   inferred: {
+///     timeOfDay?: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'late_night';
+///     isWeekend?: boolean;
+///     location?: string;
+///   };
+///   fromMemory: {
+///     dietType?: string;
+///     allergies?: string[];
+///     budget?: number;
+///     cookingSkill?: string;
+///     kitchenEquipment?: string[];
+///     homeLoc?: string;
+///     proteinTarget?: number;
+///     preferredCuisines?: string[];
+///   };
+/// }
+///
+/// clarificationData JSONB shape (TypeScript: ClarificationData):
+/// {
+///   passes: Array<{
+///     passNumber: number;           // 1 or 2 (max 2 clarification passes)
+///     questions: Array<{
+///       id: string;
+///       text: string;
+///       field: string;              // which context field this answers
+///       type: 'single_choice' | 'multi_choice' | 'freetext' | 'number';
+///       options: Array<{ label: string; value: unknown }>;
+///     }>;
+///     answers: Record<string, unknown>; // questionId → answer value
+///     askedAt: string;             // ISO 8601
+///     answeredAt: string | null;   // ISO 8601, null if not yet answered
+///   }>;
+/// }
+model Situation {
+  id            String          @id @default(uuid())
+  userId        String          @map("user_id")
+  /// Verbatim text the user submitted. Never modified after creation.
+  rawInput      String          @map("raw_input") @db.Text
+  /// Null until the Conversation Agent completes intent extraction.
+  situationType SituationType?  @map("situation_type")
+  /// Full SituationContext object. Null until intent extraction completes.
+  /// See model comment for the TypeScript interface.
+  context       Json?
+  status        SituationStatus @default(CREATED)
+  /// Null if no clarification was required. Populated during CLARIFYING status.
+  /// Stores all clarification passes (max 2) with questions and answers.
+  clarificationData Json?       @map("clarification_data")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  contextReadyAt DateTime?      @map("context_ready_at")
+  planReadyAt   DateTime?       @map("plan_ready_at")
+  completedAt   DateTime?       @map("completed_at")
+  /// Latitude from browser geolocation API or user profile fallback.
+  lat           Decimal?        @db.Decimal(10, 8)
+  /// Longitude from browser geolocation API or user profile fallback.
+  lng           Decimal?        @db.Decimal(11, 8)
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recommendation Recommendation?
+  actions        UserAction[]
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, status])
+  /// Used by operational monitoring to track stuck situations across all users.
+  @@index([status])
+  @@map("situations")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TABLE: recommendations
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// The plan produced for a situation by the agent pipeline.
+/// One-to-one with situations: exactly one recommendation per situation.
+/// Written: when the Planning Agent completes and the situation transitions to PLAN_READY.
+/// Read: on Situation Board display and during execution.
+///
+/// comparisonScores JSONB shape (TypeScript: ComparisonScores):
+/// {
+///   cook: PathScore;
+///   order: PathScore;
+///   dineOut: PathScore;
+/// }
+/// where PathScore = {
+///   score: number;               // 0–100, deterministic TypeScript calculation
+///   estimatedCostInr: number;
+///   estimatedTimeMin: number;
+///   feasible: boolean;
+///   scoringFactors: {
+///     budgetFit: number;         // 0–25 points
+///     timeFit: number;           // 0–25 points
+///     contextFit: number;        // 0–25 points
+///     nutritionFit: number;      // 0–25 points
+///   };
+///   reason: string;              // human-readable explanation of this path's score
+/// }
+///
+/// recipeSteps JSONB shape:
+/// Array<{ step: number; instruction: string; durationMin: number; tip?: string }>
+///
+/// instamartItems JSONB shape:
+/// Array<{
+///   itemId: string;
+///   name: string;
+///   quantityNeeded: number;
+///   unit: string;
+///   pricePerUnit: number;        // INR
+///   imageUrl?: string;
+///   inStockConfirmed: boolean;
+/// }>
+///
+/// swiggyData JSONB shape:
+/// {
+///   // Swiggy Food (ORDER path)
+///   restaurantId?: string;
+///   restaurantName?: string;
+///   menuItemId?: string;
+///   menuItemName?: string;
+///   deliveryEstimateMin?: number;
+///   deliveryCostInr?: number;
+///   deepLinkUrl?: string;        // pre-filled cart deep link
+///   // Swiggy Dineout (DINE_OUT path)
+///   dineoutPlaceId?: string;
+///   dineoutPlaceName?: string;
+///   availableSlots?: Array<{ date: string; time: string; tableSize: number }>;
+///   bookingUrl?: string;
+/// }
+model Recommendation {
+  id              String      @id @default(uuid())
+  /// Enforces the one-to-one relationship with situations.
+  situationId     String      @unique @map("situation_id")
+  userId          String      @map("user_id")
+
+  /// Cook / Order / Dine Out scores and supporting data. See model comment for full shape.
+  /// Computed by deterministic TypeScript scoring, not by the LLM.
+  comparisonScores Json       @map("comparison_scores")
+  primaryPath      PrimaryPath @map("primary_path")
+  /// Claude's explanation text (2–4 sentences). Produced by the Planning Agent.
+  explanation      String      @db.Text
+  /// 0–100. Derived from (1) context completeness and (2) gap between winning and second score.
+  /// A score of 80+ means the recommendation is confident. Below 60 means notable ambiguity.
+  confidenceScore  Int        @map("confidence_score")
+
+  // ── Primary recommendation display fields ─────────────────────────────────
+  title            String     @db.Text
+  /// Total cost in Indian Rupees for the primary recommendation.
+  estimatedCost    Int        @map("estimated_cost")
+  /// End-to-end time in minutes (includes delivery wait or cook time).
+  estimatedTimeMin Int        @map("estimated_time_min")
+
+  // ── Nutrition estimates (nullable — not always available via Swiggy or recipe DB) ─
+  calories         Int?
+  proteinG         Int?       @map("protein_g")
+  carbsG           Int?       @map("carbs_g")
+  fatG             Int?       @map("fat_g")
+
+  // ── Execution data (nullable — populated only for the relevant primary path) ─
+  /// YouTube video URL for a recipe tutorial. Populated for COOK path only.
+  youtubeUrl       String?    @map("youtube_url")
+  /// Step-by-step recipe instructions. Populated for COOK path only.
+  recipeSteps      Json?      @map("recipe_steps")
+  /// Instamart items to order. Populated when missing ingredients can be ordered
+  /// (COOK path with pantry gaps) or when Instamart is the delivery vehicle.
+  instamartItems   Json?      @map("instamart_items")
+  /// Swiggy Food or Dineout data for deep-link execution. Populated for ORDER and DINE_OUT paths.
+  swiggyData       Json?      @map("swiggy_data")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  situation Situation  @relation(fields: [situationId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  actions   UserAction[]
+
+  @@index([userId, createdAt(sort: Desc)])
+  /// Supports analytics queries like "what path wins for this user most often?"
+  @@index([userId, primaryPath])
+  @@map("recommendations")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TABLE: user_actions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// What the user did after receiving a recommendation.
+/// Written: the moment the user taps an action button on the Situation Board.
+/// Updated: when the user provides a rating (async, post-meal feedback).
+///
+/// rating constraint: 1–5 stars. Enforced at the application layer.
+/// Null until the user provides feedback (may never be filled).
+///
+/// externalOrderId: populated only for EXECUTED_ORDER and EXECUTED_DINEOUT actions.
+/// This is the Swiggy order ID or Dineout booking reference returned after execution.
+model UserAction {
+  id               String     @id @default(uuid())
+  userId           String     @map("user_id")
+  situationId      String     @map("situation_id")
+  recommendationId String     @map("recommendation_id")
+
+  actionType       ActionType @map("action_type")
+  /// 1–5 star rating. Nullable. Application layer must enforce 1 ≤ rating ≤ 5.
+  rating           Int?
+  /// Swiggy order ID or Dineout booking reference. Null for EXECUTED_COOK and DISMISSED.
+  externalOrderId  String?    @map("external_order_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  situation      Situation      @relation(fields: [situationId], references: [id], onDelete: Cascade)
+  recommendation Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, actionType])
+  @@index([recommendationId])
+  @@map("user_actions")
+}
