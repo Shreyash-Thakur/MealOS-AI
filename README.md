@@ -140,9 +140,21 @@ pnpm dev          # → http://localhost:3000
 | [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) | UI bible: typography, tokens, all 19 components, motion |
 | [docs/UX.md](docs/UX.md) | 12 UX laws, screen-by-screen rules, micro-interactions |
 | [docs/TESTING.md](docs/TESTING.md) | Unit, integration, E2E, agent regression, CI pipeline |
+| [docs/TEST_SCENARIOS.md](docs/TEST_SCENARIOS.md) | 100 E2E scenarios with expected decisions and assertions |
 | [docs/POSTMORTEM.md](docs/POSTMORTEM.md) | "2 years, 1M users" retro — what aged poorly and why |
 | [docs/ARCHITECTURE_DECISIONS.md](docs/ARCHITECTURE_DECISIONS.md) | 8 ADRs with context, alternatives, and revisit triggers |
-| [docs/GITHUB_ISSUES.md](docs/GITHUB_ISSUES.md) | 110 issues across 12 epics with acceptance criteria |
+| [docs/IMPLEMENTATION_PLAYBOOK.md](docs/IMPLEMENTATION_PLAYBOOK.md) | Day-by-day build order, milestones, DoD, never-before rules |
+| [docs/BACKEND_DESIGN.md](docs/BACKEND_DESIGN.md) | All 8 services: interfaces, failures, caching, metrics |
+| [docs/TYPES.md](docs/TYPES.md) | Complete TypeScript domain type library (~85 types) |
+| [docs/SCHEMAS.md](docs/SCHEMAS.md) | Zod schemas for every route, SSE event, and LLM output |
+| [docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md) | AppSec threat model — 17 findings incl. ship blockers |
+| [docs/FAILURE_MODES.md](docs/FAILURE_MODES.md) | AI Failure Bible — 25 failure modes with exact handling |
+| [docs/COST_OPTIMIZATION.md](docs/COST_OPTIMIZATION.md) | Path from $0.026 to ~$0.003 per situation |
+| [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md) | Metrics, logs, tracing, dashboards, alerts, health checks |
+| [docs/PROMPT_ENGINEERING_GUIDE.md](docs/PROMPT_ENGINEERING_GUIDE.md) | Why each prompt exists; when not to call Claude |
+| [docs/DESIGN_REVIEW.md](docs/DESIGN_REVIEW.md) | Three-reviewer design review transcript with blockers |
+| [docs/FUTURE_EVOLUTION.md](docs/FUTURE_EVOLUTION.md) | MealOS at 10M users — what ages badly, what survives |
+| [docs/GITHUB_ISSUES_P1.md](docs/GITHUB_ISSUES_P1.md) + [P2](docs/GITHUB_ISSUES_P2.md) | ~200 issues across 12 epics with acceptance criteria |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Local setup, branch naming, agent development, DB workflow |
 | [CODE_STYLE.md](CODE_STYLE.md) | TypeScript standards, naming conventions, CSS rules |
 
