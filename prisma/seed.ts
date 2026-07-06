@@ -17,6 +17,7 @@
  */
 
 import {
+  Prisma,
   PrismaClient,
   MemorySource,
   SituationType,
@@ -503,8 +504,8 @@ async function main() {
       carbsG: 62,
       fatG: 6,
       youtubeUrl: null,
-      recipeSteps: null,
-      instamartItems: null,
+      recipeSteps: Prisma.DbNull,
+      instamartItems: Prisma.DbNull,
       swiggyData: {
         restaurantId: "swg_rst_haldirams_bandra_001",
         restaurantName: "Haldiram's",
@@ -678,8 +679,8 @@ async function main() {
           durationMin: 1,
         },
       ],
-      instamartItems: null,
-      swiggyData: null,
+      instamartItems: Prisma.DbNull,
+      swiggyData: Prisma.DbNull,
       createdAt: new Date(daysAgo(2).getTime() + 6 * 60 * 1000),
     },
   });
@@ -731,7 +732,7 @@ async function main() {
         },
       },
       status: SituationStatus.COMPLETED,
-      clarificationData: null,
+      clarificationData: Prisma.DbNull,
       createdAt: hoursAgo(8),
       contextReadyAt: hoursAgo(8),
       planReadyAt: new Date(hoursAgo(8).getTime() + 5 * 60 * 1000),
@@ -991,8 +992,8 @@ async function main() {
       carbsG: null,
       fatG: null,
       youtubeUrl: null,
-      recipeSteps: null,
-      instamartItems: null,
+      recipeSteps: Prisma.DbNull,
+      instamartItems: Prisma.DbNull,
       swiggyData: {
         dineoutPlaceId: "swg_dineout_toscano_indiranagar_001",
         dineoutPlaceName: "Toscano",

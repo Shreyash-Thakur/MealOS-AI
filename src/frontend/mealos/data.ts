@@ -40,7 +40,7 @@ export type DineoutPlace = {
 const AREAS = ["Bandra", "Andheri", "Powai", "Juhu", "Worli", "Lower Parel", "Malad", "Ghatkopar"];
 
 function expand<T>(items: T[], count: number, map: (item: T, i: number) => T): T[] {
-  return Array.from({ length: count }, (_, i) => map(items[i % items.length], i));
+  return Array.from({ length: count }, (_, i) => map(items[i % items.length]!, i));
 }
 
 function cuisineImageUrl(kind: "food" | "restaurant" | "dineout" | "ingredient", hint: string, i: number): string {
@@ -76,7 +76,7 @@ export const RECIPES: Recipe[] = expand(baseRecipes, 30, (r, i) => ({
   time: `${18 + (i % 8) * 3} min`,
   cal: `${360 + (i % 10) * 30} kcal`,
   serves: `${1 + (i % 4)}`,
-  difficulty: (["Easy", "Medium", "Advanced"] as const)[i % 3],
+  difficulty: (["Easy", "Medium", "Advanced"] as const)[i % 3]!,
   price: `Rs ${320 + (i % 12) * 40}`,
   rating: (4.1 + (i % 8) * 0.1).toFixed(1),
   imageUrl: cuisineImageUrl("food", `${r.name} ${r.tags.join(" ")} ${r.difficulty}`, i + 10),
@@ -136,7 +136,7 @@ export const DINEOUT_PLACES: DineoutPlace[] = expand(baseDineout, 26, (p, i) => 
   rating: (4.3 + (i % 6) * 0.1).toFixed(1),
   priceFor2: `Rs ${2200 + (i % 11) * 250}`,
   availability: i % 3 === 0 ? `${2 + (i % 6)} tables left` : "Available tonight",
-  tags: [...p.tags, ["Live Music", "Chef Special", "Family", "Pet Friendly"][i % 4]],
+  tags: [...p.tags, ["Live Music", "Chef Special", "Family", "Pet Friendly"][i % 4]!],
   imageUrl: cuisineImageUrl("dineout", `${p.name} ${p.cuisine} ${p.ambience}`, i + 310),
 }));
 

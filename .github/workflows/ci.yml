@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [master, main, "draft/**"]
+  push:
+    branches: [master, main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Typecheck · Lint · Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+        env:
+          # CI requires all vars to be present at runtime; provide stubs so
+          # lib/env.ts passes boot validation during the test run.
+          # Real secrets are never committed — these are non-functional stubs.
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/mealos_ci
+          ANTHROPIC_API_KEY: sk-ant-ci-stub
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ci_stub
+          CLERK_SECRET_KEY: sk_test_ci_stub
+          YOUTUBE_API_KEY: AIza_ci_stub
+          SWIGGY_MCP_MODE: mock

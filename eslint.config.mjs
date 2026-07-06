@@ -1,10 +1,12 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import prettierConfig from "eslint-config-prettier";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  prettierConfig,
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
@@ -13,6 +15,40 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  // N10: Architectural invariant — lib/mcp/* and lib/youtube.ts may only be
+  // imported from lib/agents/tool.ts. Any other file importing these is a
+  // violation that would bypass the Tool Agent's normalisation and caching layer.
+  {
+    files: ["**/*.ts", "**/*.tsx"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["*/lib/mcp/*", "../mcp/*", "../../mcp/*", "../../../mcp/*"],
+              message:
+                "lib/mcp/* may only be imported from lib/agents/tool.ts (N10). " +
+                "Use the Tool Agent as the sole intermediary to Swiggy MCP.",
+            },
+            {
+              group: ["*/lib/youtube*", "../youtube*", "../../youtube*"],
+              message:
+                "lib/youtube.ts may only be imported from lib/agents/tool.ts (N10). " +
+                "Use the Tool Agent as the sole intermediary to the YouTube API.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // Exempt lib/agents/tool.ts from the restriction — it IS the sole entry point.
+  {
+    files: ["lib/agents/tool.ts"],
+    rules: {
+      "no-restricted-imports": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

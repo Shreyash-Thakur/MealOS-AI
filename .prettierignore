@@ -1,0 +1,17 @@
+# Build outputs
+.next/
+out/
+build/
+
+# Dependencies
+node_modules/
+
+# Generated files
+next-env.d.ts
+pnpm-lock.yaml
+
+# Docs (preserve formatting)
+docs/
+
+# Prisma generated client
+prisma/generated/
