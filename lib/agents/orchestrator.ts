@@ -38,7 +38,11 @@ import {
 } from '@/lib/repositories/situationRepo'
 import { createRecommendation } from '@/lib/repositories/recommendationRepo'
 import { getMemoryContext, buildMemorySummary, getPlanningMemory } from '@/lib/memory/retrieval'
+import { runMemoryAgent } from '@/lib/agents/memory'
+import { getFactsForUser } from '@/lib/repositories/memoryFactRepo'
 import type { SituationContext } from '@/types/situation'
+import type { FactKey } from '@/types/memory'
+import type { FactConfidence } from '@/types/primitives'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -358,6 +362,37 @@ export async function runOrchestrator(
       alternatives_count: plan.whyNotAlternatives.length,
     },
   })
+
+  // Fire-and-forget: extract facts from this interaction for long-term memory.
+  // Runs after plan is delivered; failures are swallowed — never impacts the user.
+  void (async () => {
+    try {
+      const existingFacts = await getFactsForUser(userId)
+      await runMemoryAgent(userId, {
+        completedSituation: {
+          rawInput,
+          situationType: situationContext.situationType,
+          explicit: situationContext.explicit as never,
+          inferred: situationContext.inferred as never,
+          recommendation: {
+            primaryPath: plan.primaryPath as never,
+            title: plan.recommendation.title,
+            estimatedCost: plan.recommendation.estimatedCost as never,
+          },
+        },
+        clarificationAnswers: [],
+        executedPath: plan.primaryPath,
+        userRating: null,
+        existingFacts: existingFacts.map((f) => ({
+          factKey: f.factKey as FactKey,
+          factValue: f.factValue,
+          confidence: f.confidence as FactConfidence,
+        })),
+      })
+    } catch {
+      // Silent failure — memory trigger never impacts the user
+    }
+  })()
 
   return {
     pipelineStatus,
