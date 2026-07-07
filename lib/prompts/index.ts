@@ -7,7 +7,7 @@
  * @module lib/prompts
  */
 
-export type { PromptKey, LoadedPrompt, PromptVersion } from './loader'
+export type { PromptKey, LoadedPrompt, PromptVersion, UserTemplateKey } from './loader'
 
 export {
   // Core accessors
@@ -26,6 +26,7 @@ export {
 
   // Assembly helpers
   assembleSystemMessage,
+  getUserMessageTemplate,
   injectVariables,
   versionedModelId,
 

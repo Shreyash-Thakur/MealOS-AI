@@ -23,6 +23,7 @@ import {
   getAllPrompts,
   loadAllPrompts,
   assembleSystemMessage,
+  getUserMessageTemplate,
   injectVariables,
   versionedModelId,
   _clearPromptCache,
@@ -390,5 +391,49 @@ describe('prompt content structure', () => {
     const { content } = readPromptFromDisk('memory')
     // Memory agent outputs an array
     expect(content).toContain('[]')
+  })
+})
+
+// ── getUserMessageTemplate ────────────────────────────────────────────────────
+
+describe('getUserMessageTemplate', () => {
+  beforeEach(() => {
+    _clearPromptCache()
+  })
+
+  it('extracts the conversation user-message template with its variables', () => {
+    const template = getUserMessageTemplate('conversation')
+    expect(template).toContain('USER INPUT: {{raw_input}}')
+    expect(template).toContain('{{user_memory_summary}}')
+    expect(template).toContain('{{previous_situation_type}}')
+    expect(template).toContain('{{current_date}}')
+    expect(template).toContain('{{current_time}}')
+    expect(template).toContain('{{day_of_week}}')
+  })
+
+  it('extracts the planning user-message template with its variables', () => {
+    const template = getUserMessageTemplate('planning')
+    expect(template).toContain('{{situation_context_json}}')
+    expect(template).toContain('{{pre_calculated_scores_json}}')
+    expect(template).toContain('{{swiggy_results_json}}')
+  })
+
+  it('extracts the clarification question-generation template', () => {
+    const template = getUserMessageTemplate('clarification')
+    expect(template).toContain('{{')
+  })
+
+  it('returns only the fenced template, not surrounding markdown', () => {
+    const template = getUserMessageTemplate('conversation')
+    expect(template).not.toContain('```')
+    expect(template).not.toContain('## ')
+    expect(template).not.toContain('Variable notes')
+  })
+
+  it('throws for a prompt file without a user-message template section', () => {
+    // system.md has no USER MESSAGE TEMPLATE h2 — the runtime guard must fire
+    expect(() => getUserMessageTemplate('system' as never)).toThrow(
+      /user.message template/i
+    )
   })
 })

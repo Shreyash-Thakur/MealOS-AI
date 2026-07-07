@@ -312,6 +312,48 @@ export function extractAgentSystemSection(agentContent: string): string {
   return inline.length > 0 ? inline : agentContent.trim()
 }
 
+/** Prompt keys that contain a fenced USER MESSAGE TEMPLATE section. */
+export type UserTemplateKey = Exclude<PromptKey, 'system' | 'fallback'>
+
+/**
+ * Extracts the fenced user-message template from an agent prompt file.
+ *
+ * Every agent prompt with a user-message contract authors it the same way
+ * (README.md §3): an h2 heading containing "USER MESSAGE TEMPLATE" followed by
+ * a ``` fence holding the template with {{snake_case}} variables. This
+ * function returns the fence content only — surrounding markdown (variable
+ * reference tables, notes) never reaches the model.
+ *
+ * @param key - Prompt key with a user-message template section.
+ * @returns The raw template string, ready for `injectVariables`.
+ * @throws If the file has no USER MESSAGE TEMPLATE heading or no fence in it.
+ */
+export function getUserMessageTemplate(key: UserTemplateKey): string {
+  const { content } = getPrompt(key)
+
+  const headingMatch = content.match(/^##[^\n#]*USER MESSAGE TEMPLATE[^\n]*$/im)
+  if (headingMatch === null || headingMatch.index === undefined) {
+    throw new Error(
+      `[PromptLoader] ${key}.md has no USER MESSAGE TEMPLATE heading — ` +
+      'cannot extract user-message template'
+    )
+  }
+
+  const rest = content.slice(headingMatch.index + headingMatch[0].length)
+  const nextH2 = rest.search(/\n## /)
+  const section = nextH2 === -1 ? rest : rest.slice(0, nextH2)
+
+  const fenceMatch = section.match(/```\n([\s\S]*?)\n```/)
+  if (!fenceMatch) {
+    throw new Error(
+      `[PromptLoader] ${key}.md USER MESSAGE TEMPLATE section has no fenced ` +
+      'template block — cannot extract user-message template'
+    )
+  }
+
+  return (fenceMatch[1] ?? '').trim()
+}
+
 /**
  * Injects {{snake_case}} variables into a template string using a replace chain.
  *
