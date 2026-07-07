@@ -73,6 +73,9 @@ export const PlanningAgentOutputSchema = z.object({
     path: zPrimaryPath,
     reason: z.string().min(5).max(300),
   }).strict()).length(2),             // exactly 2 — one per rejected path
+  // fallback.md §1 schema addition: present only when the cook-only degraded
+  // block was injected into the system prompt (Swiggy MCP fully unavailable)
+  degradedMode: z.literal('swiggy_unavailable').nullable().optional(),
 }).strict().superRefine((out, ctx) => {
   const r = out.recommendation
   const cookFields = [r.ingredients, r.recipeSteps, r.youtubeVideoId]

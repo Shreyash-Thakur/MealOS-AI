@@ -386,3 +386,31 @@ describe('PlanningRecommendationSchema — recipe steps', () => {
     expect(result.recipeSteps?.[0]?.youtubeTimestamp).toBe('1:30')
   })
 })
+
+// ── degradedMode (fallback.md §1 schema addition) ────────────────────────────
+
+describe('PlanningAgentOutputSchema — degradedMode', () => {
+  it('accepts degradedMode: "swiggy_unavailable" (cook-only degraded output)', () => {
+    const result = PlanningAgentOutputSchema.safeParse({
+      ...validCookOutput,
+      degradedMode: 'swiggy_unavailable',
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts degradedMode: null and absent degradedMode', () => {
+    expect(PlanningAgentOutputSchema.safeParse({
+      ...validCookOutput,
+      degradedMode: null,
+    }).success).toBe(true)
+    expect(PlanningAgentOutputSchema.safeParse(validCookOutput).success).toBe(true)
+  })
+
+  it('rejects any other degradedMode value', () => {
+    const result = PlanningAgentOutputSchema.safeParse({
+      ...validCookOutput,
+      degradedMode: 'youtube_down',
+    })
+    expect(result.success).toBe(false)
+  })
+})
