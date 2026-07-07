@@ -299,6 +299,7 @@ export async function runOrchestrator(
       householdSize: planningMemory.householdSize,
       fitnessGoals: planningMemory.fitnessGoals as never,
       preferredCuisines: planningMemory.preferredCuisines,
+      dislikedCuisines: planningMemory.dislikedCuisines,
       frequentRestaurants: planningMemory.frequentRestaurants,
       pantryStaples: planningMemory.pantryStaples,
     },

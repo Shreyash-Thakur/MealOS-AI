@@ -50,7 +50,7 @@ vi.mock('@/lib/memory/retrieval', () => ({
   getPlanningMemory: vi.fn().mockResolvedValue({
     diet: 'vegetarian', budget: 350, allergies: [], cookingSkill: 'intermediate',
     kitchenEquipment: ['gas stove'], householdSize: 1, fitnessGoals: {},
-    preferredCuisines: ['North Indian'], frequentRestaurants: [], pantryStaples: [],
+    preferredCuisines: ['North Indian'], dislikedCuisines: [], frequentRestaurants: [], pantryStaples: [],
   }),
 }))
 
