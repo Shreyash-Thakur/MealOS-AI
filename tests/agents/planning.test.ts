@@ -79,6 +79,7 @@ function makeInput(overrides: Partial<PlanningAgentInput> = {}): PlanningAgentIn
       householdSize: 1,
       fitnessGoals: {},
       preferredCuisines: ['North Indian'],
+      dislikedCuisines: [],
       frequentRestaurants: [],
       pantryStaples: ['rice', 'dal'],
     } as unknown as PlanningAgentInput['userMemory'],
@@ -167,7 +168,7 @@ describe('runPlanningAgent — prompt assembly', () => {
     expect(user).toContain('"cook": 82')
     expect(user).toContain('"order": 61')
     expect(user).toContain('"situationType": "sick"')
-    expect(user).toContain('"diet": "vegetarian"')
+    expect(user).toContain('Known User Preferences')
     expect(user).not.toContain('{{')
   })
 

@@ -92,7 +92,7 @@ SITUATION CONTEXT:
 {{situation_context_json}}
 
 USER MEMORY:
-{{user_memory_json}}
+{{user_memory_block}}
 
 PRE-CALCULATED PATH SCORES:
 {{pre_calculated_scores_json}}
@@ -114,7 +114,7 @@ PANTRY ITEMS:
 | Variable | Type | Description |
 |---|---|---|
 | `{{situation_context_json}}` | `SituationContext` | Full context object output by Conversation Agent, merged with clarification answers. Contains `situationType`, `explicit`, `inferred`, `confidence`, `missingRequired`, `missingSoft`. |
-| `{{user_memory_json}}` | `UserMemory` | Structured user facts: `{ diet, budget, allergies, cookingSkill, kitchenEquipment, householdSize, fitnessGoals, preferredCuisines, frequentRestaurants, pantryStaples }` |
+| `{{user_memory_block}}` | `string` | Human-readable bullet list of known user preferences (diet, allergies, budget, cuisines, fitness goals, etc.). Formatted by `formatMemoryForPlanning()`. Value is `"No user memory available."` for new users. |
 | `{{pre_calculated_scores_json}}` | `{ cook: number, order: number, dineout: number }` | Integer scores 0–100 per path. Computed by deterministic TypeScript scorer. Do not modify. |
 | `{{swiggy_results_json}}` | `SwiggyResults \| null` | `{ restaurants: SwiggyRestaurant[], instamartItems: InstamartItem[], dineoutVenues: DineoutVenue[] }` — or `null` if Swiggy MCP unavailable |
 | `{{youtube_result_json}}` | `YouTubeResult \| null` | `{ videoId, title, channelName, durationSeconds, thumbnailUrl, keyTimestamps: { label, seconds }[] }` — or `null` if no result |

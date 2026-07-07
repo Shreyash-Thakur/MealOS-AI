@@ -37,6 +37,8 @@ import {
 import type { AgentRunResult, PlanningAgentInput } from '@/types/agents'
 import type { PrimaryPath } from '@/types/situation'
 import type { PlanningAgentOutputValidated } from '@/lib/schemas/planningOutput'
+import type { PlanningMemory } from '@/lib/memory/retrieval'
+import { formatMemoryForPlanning } from '@/lib/memory/formatter'
 
 // ── Context-window truncation (AGENTS.md §3.3 / ISSUE-104) ────────────────────
 
@@ -101,7 +103,11 @@ export function buildPlanningUserMessage(input: PlanningAgentInput): string {
 
   return injectVariables(getUserMessageTemplate('planning'), {
     situation_context_json: JSON.stringify(truncated.situationContext, null, 2),
-    user_memory_json: JSON.stringify(truncated.userMemory, null, 2),
+    user_memory_block:
+      formatMemoryForPlanning(
+        truncated.userMemory as PlanningMemory,
+        truncated.situationContext.situationType,
+      ) ?? 'No user memory available.',
     pre_calculated_scores_json: JSON.stringify(truncated.preCalculatedScores, null, 2),
     swiggy_results_json:
       truncated.swiggyResults === null
