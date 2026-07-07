@@ -49,6 +49,16 @@ const eslintConfig = defineConfig([
       "no-restricted-imports": "off",
     },
   },
+  // Exempt MCP unit tests — tests/mcp/* directly test the MCP layer and must
+  // import it. This does not weaken the N10 architectural invariant because
+  // production code paths are still fully restricted; only dedicated unit tests
+  // for lib/mcp/* are allowed here.
+  {
+    files: ["tests/mcp/**/*.ts", "tests/mcp/**/*.tsx", "lib/mcp/**/*.ts"],
+    rules: {
+      "no-restricted-imports": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;
