@@ -177,6 +177,42 @@ export const ToolAgentOutputSchema = z.object({
   }).strict(),
 }).strict()
 
+// ── Clarification Engine — ClarificationOutputSchema ──────────────────────────
+// Source: docs/prompts/clarification.md §3. The Clarification Engine is a
+// pipeline stage hosted by the Conversation Service (playbook §9 item 2), but
+// its LLM output is validated like any agent output.
+
+export const ClarificationLLMQuestionSchema = z.object({
+  text: z.string().min(5).max(300),
+  field: z.string().min(1).max(60),
+  // number_input is the prompt-file spelling; mapped to domain 'number' downstream
+  type: z.enum(['single_choice', 'multi_choice', 'number_input', 'freetext'] as const),
+  // 2–4 quick-tap options + exactly one free-text fallback (clarification.md rule 2)
+  options: z.array(z.object({
+    label: z.string().min(1).max(120),
+    value: z.union([z.string().max(200), z.number(), z.boolean()]),
+  }).strict()).min(2).max(6),
+  required: z.boolean(),
+  evoi: z.enum(['high', 'medium', 'low'] as const),
+}).strict()
+
+export const AssumptionStatementSchema = z.object({
+  text: z.string().min(5).max(300),
+  fields: z.array(z.string().max(60)).min(1).max(5),
+  values: z.record(z.unknown()),
+  confirmable: z.boolean(),
+}).strict()
+
+/**
+ * Deliberately lenient on question count (max 8, not 3): ISSUE-065 mandates the
+ * 3-question cap be enforced by slice(0,3) AFTER Zod parse — an over-generating
+ * model is capped, not routed to the fallback.
+ */
+export const ClarificationOutputSchema = z.object({
+  questions: z.array(ClarificationLLMQuestionSchema).max(8),
+  assumptions: z.array(AssumptionStatementSchema).max(6),
+}).strict()
+
 // ── §15.4 Memory Agent — MemoryAgentOutputSchema ──────────────────────────────
 
 export const ExtractedMemoryFactSchema = z.object({
@@ -248,6 +284,9 @@ export const DecisionResultSchema = z.object({
 
 export type ExtractedContextValidated  = z.infer<typeof ExtractedContextSchema>
 export type SituationContextValidated  = z.infer<typeof SituationContextSchema>
+export type ClarificationLLMQuestionValidated = z.infer<typeof ClarificationLLMQuestionSchema>
+export type AssumptionStatementValidated = z.infer<typeof AssumptionStatementSchema>
+export type ClarificationOutputValidated = z.infer<typeof ClarificationOutputSchema>
 export type ToolAgentOutputValidated   = z.infer<typeof ToolAgentOutputSchema>
 export type ExtractedMemoryFactValidated = z.infer<typeof ExtractedMemoryFactSchema>
 export type MemoryAgentOutputValidated = z.infer<typeof MemoryAgentOutputSchema>

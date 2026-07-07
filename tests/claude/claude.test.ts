@@ -35,6 +35,7 @@ const {
   extractTextContent,
   callStructured,
   runStructured,
+  runClarificationEngine,
   CONVERSATION_CONFIG,
   PLANNING_CONFIG,
   TOOL_CONFIG,
@@ -706,5 +707,98 @@ describe('parseAndValidate with real MealOS schemas', () => {
       expiresAfterDays: null,
     }]
     expect(parseAndValidate(JSON.stringify(invalid), MemoryAgentOutputSchema).success).toBe(false)
+  })
+})
+
+// ── Config override + Clarification Engine transport ──────────────────────────
+
+describe('runStructured — config override (Clarification Engine hosting)', () => {
+  const TrivialSchema = z.object({ ok: z.boolean() }).strict()
+
+  it('uses the override config for the API call instead of the AGENT_CONFIGS entry', async () => {
+    const client = makeMockClient('{"ok": true}')
+    _setAnthropicClient(client)
+
+    await runStructured({
+      agentName: 'ConversationAgent',
+      systemMessage: 'sys',
+      userMessage: 'user',
+      schema: TrivialSchema,
+      fallbackOutput: { ok: false },
+      config: { ...CLARIFICATION_CONFIG, maxOutputTokens: 123 },
+    })
+
+    const createMock = vi.mocked(client.messages.create)
+    expect(createMock.mock.calls[0]?.[0]).toMatchObject({
+      model: 'claude-haiku-4-5',
+      max_tokens: 123,
+    })
+  })
+
+  it('falls back to the AGENT_CONFIGS entry when no override is given', async () => {
+    const client = makeMockClient('{"ok": true}')
+    _setAnthropicClient(client)
+
+    await runStructured({
+      agentName: 'ConversationAgent',
+      systemMessage: 'sys',
+      userMessage: 'user',
+      schema: TrivialSchema,
+      fallbackOutput: { ok: false },
+    })
+
+    const createMock = vi.mocked(client.messages.create)
+    expect(createMock.mock.calls[0]?.[0]).toMatchObject({
+      model: CONVERSATION_CONFIG.model,
+      max_tokens: CONVERSATION_CONFIG.maxOutputTokens,
+    })
+  })
+})
+
+describe('runClarificationEngine transport helper', () => {
+  it('returns a validated ClarificationOutput on success', async () => {
+    const valid = {
+      questions: [{
+        text: 'Feeling up to cooking something simple?',
+        field: 'canCook',
+        type: 'single_choice',
+        options: [
+          { label: 'Can manage simple', value: true },
+          { label: 'Need delivery', value: false },
+          { label: 'Something else', value: 'freetext' },
+        ],
+        required: true,
+        evoi: 'high',
+      }],
+      assumptions: [],
+    }
+    _setAnthropicClient(makeMockClient(JSON.stringify(valid)))
+
+    const result = await runClarificationEngine('sys', 'user')
+    expect(result.status).toBe('completed')
+    expect(result.output.questions).toHaveLength(1)
+    expect(result.output.questions[0]?.evoi).toBe('high')
+  })
+
+  it('returns the empty fallback on schema failure (fail fast, no re-ask)', async () => {
+    const { client, calls } = makeSequenceClient(['not json at all'])
+    _setAnthropicClient(client)
+
+    const result = await runClarificationEngine('sys', 'user')
+    expect(result.status).toBe('schema_failed')
+    expect(result.output).toEqual({ questions: [], assumptions: [] })
+    expect(calls()).toBe(1)   // no schema re-ask for the Clarification Engine
+  })
+
+  it('uses the CLARIFICATION_CONFIG token cap on the API call', async () => {
+    const client = makeMockClient('{"questions": [], "assumptions": []}')
+    _setAnthropicClient(client)
+
+    await runClarificationEngine('sys', 'user')
+
+    const createMock = vi.mocked(client.messages.create)
+    expect(createMock.mock.calls[0]?.[0]).toMatchObject({
+      max_tokens: CLARIFICATION_CONFIG.maxOutputTokens,
+    })
   })
 })

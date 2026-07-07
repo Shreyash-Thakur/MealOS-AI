@@ -32,11 +32,13 @@ import {
   PlanningAgentOutputSchema,
   ToolAgentOutputSchema,
   MemoryAgentOutputSchema,
+  ClarificationOutputSchema,
 } from '@/lib/schemas'
 import type {
   ExtractedContextValidated,
   ToolAgentOutputValidated,
   MemoryAgentOutputValidated,
+  ClarificationOutputValidated,
 } from '@/lib/schemas/agents'
 import type { PlanningAgentOutputValidated } from '@/lib/schemas/planningOutput'
 
@@ -135,6 +137,16 @@ export const TOOL_FALLBACK: ToolAgentOutputValidated = {
  * Memory Agent fallback (AGENTS.md §5.6): empty fact array — no writes, silent.
  */
 export const MEMORY_FALLBACK: MemoryAgentOutputValidated = []
+
+/**
+ * Clarification Engine fallback: no questions, no assumptions. The pipeline
+ * proceeds on the assume-and-go path (M3 cut-line philosophy: never block
+ * planning on a failed phrasing call).
+ */
+export const CLARIFICATION_FALLBACK: ClarificationOutputValidated = {
+  questions: [],
+  assumptions: [],
+}
 
 // ── Per-agent config table ────────────────────────────────────────────────────
 // Source: docs/AGENTS.md §2.1, §3.1, §4.1, §5.1.
@@ -238,7 +250,7 @@ export const CLARIFICATION_CONFIG: AgentConfig = {
     backoffMs: 200 as Ms,
     retryOn: ['timeout'],
   },
-  fallback: { questions: [], assumptions: [] },
+  fallback: CLARIFICATION_FALLBACK,
 }
 
 /** Lookup table by AgentName. */
@@ -400,6 +412,13 @@ export interface StructuredCallParams<T> {
   allowSchemaReAsk?: boolean
   /** 1-based attempt number supplied by the outer retry loop (for reporting). */
   attemptNumber?: number
+  /**
+   * Config override for callers not keyed 1:1 by AgentName. The Clarification
+   * Engine is hosted under the ConversationAgent namespace but carries its own
+   * config (CLARIFICATION_CONFIG: 1 retry, own fallback) — without an override
+   * the AGENT_CONFIGS lookup would silently use CONVERSATION_CONFIG.
+   */
+  config?: AgentConfig
 }
 
 /** Result of a single structured call (no retry-loop bookkeeping). */
@@ -433,7 +452,7 @@ export interface StructuredCallResult<T> {
 export async function callStructured<T>(
   params: StructuredCallParams<T>,
 ): Promise<StructuredCallResult<T>> {
-  const config = AGENT_CONFIGS[params.agentName]
+  const config = params.config ?? AGENT_CONFIGS[params.agentName]
   const client = getAnthropicClient()
 
   let inputTokens = 0
@@ -533,7 +552,7 @@ export type RunStructuredParams<T> = StructuredCallParams<T>
 export async function runStructured<T>(
   params: RunStructuredParams<T>,
 ): Promise<AgentRunResult<T>> {
-  const config = AGENT_CONFIGS[params.agentName]
+  const config = params.config ?? AGENT_CONFIGS[params.agentName]
   const startMs = Date.now()
 
   let lastStatus: AgentRunResult<T>['status'] = 'failed'
@@ -653,6 +672,27 @@ export function runToolAgent(
     schema: ToolAgentOutputSchema,
     allowSchemaReAsk: false,
     fallbackOutput: TOOL_FALLBACK,
+  })
+}
+
+/**
+ * Runs the Clarification Engine phrasing call (haiku, 3s, 1 retry, no re-ask).
+ * Hosted under the ConversationAgent namespace (AgentName has no Clarification
+ * entry) but runs with CLARIFICATION_CONFIG via the config override.
+ * Validates with `ClarificationOutputSchema`.
+ */
+export function runClarificationEngine(
+  systemMessage: string,
+  userMessage: string,
+): Promise<AgentRunResult<ClarificationOutputValidated>> {
+  return runStructured<ClarificationOutputValidated>({
+    agentName: 'ConversationAgent',
+    systemMessage,
+    userMessage,
+    schema: ClarificationOutputSchema,
+    allowSchemaReAsk: false,
+    fallbackOutput: CLARIFICATION_FALLBACK,
+    config: CLARIFICATION_CONFIG,
   })
 }
 
