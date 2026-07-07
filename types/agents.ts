@@ -133,6 +133,7 @@ export interface PlanningAgentInput {
       gymDays?: string[]
     }
     preferredCuisines: string[]
+    dislikedCuisines: string[]
     frequentRestaurants: string[]
     pantryStaples: string[]
   }

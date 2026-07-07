@@ -56,6 +56,7 @@ export interface PlanningMemory {
     gymDays?: string[]
   }
   preferredCuisines: string[]
+  dislikedCuisines: string[]
   frequentRestaurants: string[]
   pantryStaples: string[]
 }
@@ -265,6 +266,7 @@ export async function getPlanningMemory(userId: string): Promise<PlanningMemory>
     householdSize: (map['household.size'] as number | undefined) ?? 1,
     fitnessGoals,
     preferredCuisines: (map['preference.cuisines.liked'] as string[] | undefined) ?? [],
+    dislikedCuisines: (map['preference.cuisines.disliked'] as string[] | undefined) ?? [],
     frequentRestaurants: (map['ordering.frequent_restaurants'] as string[] | undefined) ?? [],
     pantryStaples: (map['pantry.staples'] as string[] | undefined) ?? [],
   }
