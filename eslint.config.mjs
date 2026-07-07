@@ -43,8 +43,11 @@ const eslintConfig = defineConfig([
     },
   },
   // Exempt lib/agents/tool.ts from the restriction — it IS the sole entry point.
+  // Its unit tests must construct MCP mocks directly, so they share the exemption
+  // (they use dynamic imports the rule cannot see anyway; listing them keeps the
+  // exemption explicit rather than loophole-dependent).
   {
-    files: ["lib/agents/tool.ts"],
+    files: ["lib/agents/tool.ts", "tests/agents/tool.test.ts"],
     rules: {
       "no-restricted-imports": "off",
     },
