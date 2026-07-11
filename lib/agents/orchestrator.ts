@@ -256,6 +256,17 @@ export async function runOrchestrator(
       situationContext.fromMemory.dietType === 'vegan' ? 'vegan' :
       'none',
     craving: situationContext.explicit.craving,
+    // A stated craving is V1's recipe identification for the cook path — it
+    // gates the youtube_search_recipe call (AGENTS.md §4.3 Tool 4).
+    ...(situationContext.explicit.craving !== undefined
+      ? { recipeName: situationContext.explicit.craving }
+      : {}),
+    ...(situationContext.explicit.timeConstraintMinutes !== undefined
+      ? { timeConstraintMinutes: situationContext.explicit.timeConstraintMinutes as number }
+      : {}),
+    ...(situationContext.fromMemory.cookingSkill !== undefined
+      ? { cookingSkill: situationContext.fromMemory.cookingSkill }
+      : {}),
   }, {
     onProgress: (event) => {
       send('agent_progress', {

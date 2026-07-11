@@ -95,6 +95,7 @@ const { runToolAgent } = await import('@/lib/agents/tool')
 const { runPlanningAgent } = await import('@/lib/agents/planning')
 const { waitForClarificationAnswers } = await import('@/lib/sse')
 const { createRecommendation } = await import('@/lib/repositories/recommendationRepo')
+const { getMemoryContext } = await import('@/lib/memory/retrieval')
 
 import type { ExtractedContextValidated } from '@/lib/schemas/agents'
 import type { ClarificationEngineResult } from '@/lib/agents/clarification'
@@ -260,6 +261,41 @@ describe('runOrchestrator — happy path (no clarification)', () => {
     const send = vi.fn()
     await runOrchestrator(INPUT, send)
     expect(createRecommendation).toHaveBeenCalledTimes(1)
+  })
+
+  it('threads craving, time constraint, and cooking skill into the Tool Agent (ISSUE-133)', async () => {
+    mockConv.mockResolvedValue({
+      ...CONV_RESULT,
+      output: {
+        ...GOOD_CONV_OUTPUT,
+        explicit: {
+          ...GOOD_CONV_OUTPUT.explicit,
+          craving: 'dal khichdi',
+          timeConstraintMinutes: 30 as never,
+        },
+      },
+    })
+    vi.mocked(getMemoryContext).mockResolvedValueOnce({
+      dietType: 'vegetarian',
+      budget: 350 as never,
+      cookingSkill: 'beginner',
+    })
+
+    const send = vi.fn()
+    await runOrchestrator(INPUT, send)
+
+    expect(mockTool.mock.calls[0]?.[0]).toMatchObject({
+      recipeName: 'dal khichdi',
+      timeConstraintMinutes: 30,
+      cookingSkill: 'beginner',
+    })
+  })
+
+  it('omits recipeName when the user stated no craving', async () => {
+    const send = vi.fn()
+    await runOrchestrator(INPUT, send)
+
+    expect(mockTool.mock.calls[0]?.[0]).not.toHaveProperty('recipeName')
   })
 })
 
