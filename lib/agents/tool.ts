@@ -28,6 +28,7 @@
  */
 
 import { getSwiggyClient, type ISwiggyClient } from '@/lib/mcp/swiggy'
+import { getYouTubeClient } from '@/lib/youtube/client'
 import { isDegraded, type Degraded, type ToolResult } from '@/lib/mcp/mock'
 import { classifyError, errorMessage, type McpErrorCode } from '@/lib/mcp/errors'
 import type { SituationType } from '@/types/situation'
@@ -124,8 +125,9 @@ export interface ToolAgentInput {
 }
 
 /**
- * Injectable YouTube client boundary. The concrete client lands with M7
- * (ISSUE-131); until then callers simply omit it and youtube stays null.
+ * Injectable YouTube client boundary. Defaults to the env-keyed
+ * YouTubeDataClient singleton (lib/youtube/client.ts, ISSUE-131);
+ * tests inject a fake here.
  */
 export interface YouTubeClient {
   searchRecipe(params: {
@@ -146,7 +148,7 @@ export interface ToolProgressEvent {
 export interface ToolAgentDeps {
   /** Swiggy client override; defaults to getSwiggyClient() (env-selected). */
   swiggy?: ISwiggyClient
-  /** YouTube client; absent until M7 — youtube is then never attempted. */
+  /** YouTube client override; defaults to getYouTubeClient() (ISSUE-131). */
   youtube?: YouTubeClient
   /** Retry backoff base override (tests use 1ms). Default 500ms per spec. */
   backoffMs?: number
@@ -236,8 +238,7 @@ export async function runToolAgent(
   const callInstamart =
     input.pathAvailability.cook && (input.missingIngredients?.length ?? 0) > 0
   const callDineout = input.pathAvailability.dineout
-  const callYouTube =
-    input.pathAvailability.cook && input.recipeName !== undefined && deps.youtube !== undefined
+  const callYouTube = input.pathAvailability.cook && input.recipeName !== undefined
 
   // Not-called defaults: [] for lists, null for youtube (§4.5)
   let restaurants: Restaurant[] | null = []
@@ -328,7 +329,7 @@ export async function runToolAgent(
     )
   }
 
-  if (callYouTube && deps.youtube && input.recipeName !== undefined) {
+  if (callYouTube && input.recipeName !== undefined) {
     toolsAttempted.push('youtube_search_recipe')
     const style =
       input.cookingSkill === 'beginner'
@@ -336,7 +337,7 @@ export async function runToolAgent(
         : input.timeConstraintMinutes !== undefined && input.timeConstraintMinutes < 30
           ? ('quick' as const)
           : undefined
-    const youtubeClient = deps.youtube
+    const youtubeClient = deps.youtube ?? getYouTubeClient()
     const recipeName = input.recipeName
     work.push(
       callWithRetry(

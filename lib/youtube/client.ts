@@ -117,13 +117,18 @@ const DEFAULT_TIMEOUT_MS = 2000
 
 export class YouTubeDataClient {
   private readonly apiKey: string
-  private readonly fetchFn: FetchLike
+  private readonly injectedFetch: FetchLike | undefined
   private readonly timeoutMs: number
 
   constructor(deps: YouTubeClientDeps = {}) {
     this.apiKey = deps.apiKey ?? env.YOUTUBE_API_KEY
-    this.fetchFn = deps.fetchFn ?? (globalThis.fetch as FetchLike)
+    this.injectedFetch = deps.fetchFn
     this.timeoutMs = deps.timeoutMs ?? DEFAULT_TIMEOUT_MS
+  }
+
+  /** Resolved per call so the process-lifetime singleton honors fetch stubs/polyfills. */
+  private get fetchFn(): FetchLike {
+    return this.injectedFetch ?? (globalThis.fetch as FetchLike)
   }
 
   /**
@@ -213,4 +218,28 @@ async function classifyHttpFailure(res: {
 function classifyThrown(err: unknown): YouTubeDegraded {
   const message = err instanceof Error ? err.message : String(err)
   return degraded('API_DOWN', `YouTube API unreachable: ${message}`)
+}
+
+// ── Singleton factory ─────────────────────────────────────────────────────────
+
+let _instance: YouTubeDataClient | null = null
+
+/**
+ * Process-lifetime singleton YouTubeDataClient, keyed off env.YOUTUBE_API_KEY.
+ * lib/agents/tool.ts imports this exclusively (rule N10) as the default when
+ * no client is injected via ToolAgentDeps.
+ */
+export function getYouTubeClient(): YouTubeDataClient {
+  if (_instance === null) {
+    _instance = new YouTubeDataClient()
+  }
+  return _instance
+}
+
+/**
+ * Reset the singleton — used in tests to inject a fresh client between cases.
+ * Never call in production code.
+ */
+export function resetYouTubeClient(): void {
+  _instance = null
 }

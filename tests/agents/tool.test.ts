@@ -360,13 +360,54 @@ describe('runToolAgent — YouTube', () => {
     expect(output._meta.toolsAttempted).toContain('youtube_search_recipe')
   })
 
-  it('does not attempt YouTube without a client (client lands M7)', async () => {
+  it('does not attempt YouTube when no recipe is identified', async () => {
     const swiggy = new MockSwiggyMCPClient('mock')
+    const youtube = fakeYouTube('ok')
 
-    const output = await runToolAgent(makeInput({ recipeName: 'dal khichdi' }), { swiggy })
+    const output = await runToolAgent(makeInput(), { swiggy, youtube })
 
+    expect(youtube.searchRecipe).not.toHaveBeenCalled()
     expect(output.youtube).toBeNull()
     expect(output._meta.toolsAttempted).not.toContain('youtube_search_recipe')
+  })
+
+  it('falls back to the env-selected default client when none is injected (ISSUE-133)', async () => {
+    const swiggy = new MockSwiggyMCPClient('mock')
+    // The default YouTubeDataClient uses globalThis.fetch — stub it so the
+    // default path is exercised hermetically.
+    vi.stubGlobal('fetch', vi.fn(async (url: string) =>
+      url.includes('/youtube/v3/search')
+        ? {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              items: [{
+                id: { videoId: 'dQw4w9WgXcQ' },
+                snippet: {
+                  title: 'Perfect Dal Khichdi',
+                  channelTitle: 'Home Cooking',
+                  publishedAt: '2025-01-15T10:00:00Z',
+                  thumbnails: { high: { url: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg' } },
+                },
+              }],
+            }),
+          }
+        : {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              items: [{ contentDetails: { duration: 'PT12M' }, statistics: { viewCount: '1000' } }],
+            }),
+          }
+    ))
+    try {
+      const output = await runToolAgent(makeInput({ recipeName: 'dal khichdi' }), { swiggy })
+
+      expect(output._meta.toolsAttempted).toContain('youtube_search_recipe')
+      expect(output.youtube?.videoId).toBe('dQw4w9WgXcQ')
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 
   it('does not attempt YouTube when cook path is unavailable', async () => {
