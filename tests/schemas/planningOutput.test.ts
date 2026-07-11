@@ -24,6 +24,15 @@ const baseRecommendation = {
   estimatedTime: 30,
 }
 
+/** n valid recipe steps — cook recommendations must carry 6–8 (ISSUE-141). */
+function makeSteps(n: number) {
+  return Array.from({ length: n }, (_, i) => ({
+    step: i + 1,
+    instruction: `Step ${i + 1}: do the next thing.`,
+    durationMin: 3,
+  }))
+}
+
 const validCookOutput = {
   explanation: 'Given your budget of ₹150 and a stocked pantry, cooking dal tadka at home saves ₹200 vs ordering.',
   primaryPath: 'cook' as const,
@@ -35,8 +44,12 @@ const validCookOutput = {
       { name: 'Onion', qty: '1 medium', inPantry: true },
     ],
     recipeSteps: [
-      { step: 1, instruction: 'Pressure cook dal with salt.', durationMin: 15 },
-      { step: 2, instruction: 'Heat ghee and add mustard seeds.', durationMin: 2 },
+      { step: 1, instruction: 'Rinse dal until the water runs clear.', durationMin: 2 },
+      { step: 2, instruction: 'Pressure cook dal with salt and turmeric.', durationMin: 15 },
+      { step: 3, instruction: 'Heat ghee and add mustard seeds.', durationMin: 2 },
+      { step: 4, instruction: 'Add onions and sauté until golden.', durationMin: 5 },
+      { step: 5, instruction: 'Pour the tempering over the cooked dal.', durationMin: 1 },
+      { step: 6, instruction: 'Simmer together and serve with rice.', durationMin: 5 },
     ],
   },
   whyNotAlternatives: [
@@ -171,7 +184,7 @@ describe('PlanningAgentOutputSchema — cross-path field pollution', () => {
       ...validOrderOutput,
       recommendation: {
         ...validOrderOutput.recommendation,
-        recipeSteps: [{ step: 1, instruction: 'Test', durationMin: 5 }],
+        recipeSteps: makeSteps(6),
       },
     }
     expect(() => PlanningAgentOutputSchema.parse(polluted)).toThrow(
@@ -363,23 +376,27 @@ describe('PlanningAgentOutputSchema — confidence levels', () => {
 // ── Recipe step sub-schema tests ──────────────────────────────────────────────
 
 describe('PlanningRecommendationSchema — recipe steps', () => {
-  it('rejects more than 40 recipe steps', () => {
-    const tooManySteps = {
-      ...baseRecommendation,
-      recipeSteps: Array.from({ length: 41 }, (_, i) => ({
-        step: i + 1,
-        instruction: 'Do something.',
-        durationMin: 2,
-      })),
-    }
+  it('rejects more than 8 recipe steps (ISSUE-141)', () => {
+    const tooManySteps = { ...baseRecommendation, recipeSteps: makeSteps(9) }
     expect(() => PlanningRecommendationSchema.parse(tooManySteps)).toThrow()
+  })
+
+  it('rejects fewer than 6 recipe steps (ISSUE-141)', () => {
+    const tooFewSteps = { ...baseRecommendation, recipeSteps: makeSteps(5) }
+    expect(() => PlanningRecommendationSchema.parse(tooFewSteps)).toThrow()
+  })
+
+  it.each([6, 7, 8])('accepts %d recipe steps', (n) => {
+    const steps = { ...baseRecommendation, recipeSteps: makeSteps(n) }
+    expect(() => PlanningRecommendationSchema.parse(steps)).not.toThrow()
   })
 
   it('accepts youtube timestamp in recipeSteps', () => {
     const stepWithTimestamp = {
       ...baseRecommendation,
       recipeSteps: [
-        { step: 1, instruction: 'Boil water.', durationMin: 5, youtubeTimestamp: '1:30' },
+        { ...makeSteps(6)[0]!, youtubeTimestamp: '1:30' },
+        ...makeSteps(6).slice(1),
       ],
     }
     const result = PlanningRecommendationSchema.parse(stepWithTimestamp)
@@ -390,11 +407,25 @@ describe('PlanningRecommendationSchema — recipe steps', () => {
     const stepWithNull = {
       ...baseRecommendation,
       recipeSteps: [
-        { step: 1, instruction: 'Boil water.', durationMin: 5, youtubeTimestamp: null },
+        { ...makeSteps(6)[0]!, youtubeTimestamp: null },
+        ...makeSteps(6).slice(1),
       ],
     }
     const result = PlanningRecommendationSchema.parse(stepWithNull)
     expect(result.recipeSteps?.[0]?.youtubeTimestamp).toBeUndefined()
+  })
+
+  it('rejects a cook plan with no recipeSteps at all (ISSUE-141)', () => {
+    const noSteps = {
+      ...validCookOutput,
+      recommendation: {
+        ...validCookOutput.recommendation,
+        recipeSteps: undefined,
+      },
+    }
+    expect(() => PlanningAgentOutputSchema.parse(noSteps)).toThrow(
+      /cook path requires 6–8 recipe steps/
+    )
   })
 })
 

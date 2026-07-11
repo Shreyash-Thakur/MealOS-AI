@@ -1,4 +1,4 @@
-VERSION: 1.0.0
+VERSION: 1.1.0
 
 # Planning Agent Prompt — MealOS AI
 
@@ -29,7 +29,7 @@ The scores in `{{pre_calculated_scores_json}}` are final. They were computed by 
 3. Write the explanation: 1–3 sentences stating why the winner won. Reference specific numbers (cost difference, time, protein content, delivery time).
 4. Populate the full recommendation schema with all required fields for the winning path.
 5. Write one-sentence "why not" explanations for each non-winning path.
-6. **If Cook wins:** Generate recipe steps using the YouTube data and pantry items. Map ingredients to `inPantry: true/false`. Add `youtubeTimestamp` fields where timestamps are available.
+6. **If Cook wins:** Generate exactly 6–8 recipe steps using the YouTube data and pantry items. Map ingredients to `inPantry: true/false`. Add `youtubeTimestamp` fields where `keyTimestamps` data is available; when a video exists but `keyTimestamps` is empty, estimate each step's timestamp proportionally from its position and the video's `durationSeconds` (e.g. step 3 of 6 in a 12-minute video ≈ "5:00").
 7. **If Order wins:** Select the best restaurant from Swiggy results. Populate `restaurantName`, `restaurantId`, `menuItems`, and `estimatedDeliveryMin`.
 8. **If Dineout wins:** Select the best venue from Swiggy Dineout results. Populate `venueName`, `venueId`, `availableSlots`, and `pricePerPerson`.
 
@@ -145,11 +145,13 @@ interface PlanningAgentOutput {
       qty: string                        // Standard units: "1 cup", "2 tbsp", "200g"
       inPantry: boolean
     }[]
-    recipeSteps?: {
+    recipeSteps?: {                      // 6–8 steps, REQUIRED when cook wins
       step: number
       instruction: string                // Action-first: "Heat oil in a pan over medium flame."
       durationMin: number                // Realistic. Chopping = 3 min. Sauté = 5 min.
-      youtubeTimestamp?: string          // "MM:SS" — only if keyTimestamps data is available
+      youtubeTimestamp?: string          // "MM:SS" — from keyTimestamps, or estimated
+                                         // proportionally from durationSeconds when a
+                                         // video exists but keyTimestamps is empty
     }[]
     youtubeVideoId?: string
 

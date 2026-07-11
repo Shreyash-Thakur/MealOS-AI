@@ -107,7 +107,14 @@ const VALID_COOK_OUTPUT: PlanningAgentOutputValidated = {
     estimatedCost: 40,
     estimatedTime: 25,
     ingredients: [{ name: 'Moong Dal', qty: '1 cup', inPantry: true }],
-    recipeSteps: [{ step: 1, instruction: 'Rinse dal and rice.', durationMin: 3 }],
+    recipeSteps: [
+      { step: 1, instruction: 'Rinse dal and rice.', durationMin: 3 },
+      { step: 2, instruction: 'Pressure cook with water and salt.', durationMin: 12 },
+      { step: 3, instruction: 'Heat ghee, add cumin seeds.', durationMin: 2 },
+      { step: 4, instruction: 'Add turmeric and pour over khichdi.', durationMin: 1 },
+      { step: 5, instruction: 'Stir and simmer until soft.', durationMin: 5 },
+      { step: 6, instruction: 'Serve warm with a spoon of curd.', durationMin: 2 },
+    ],
   },
   whyNotAlternatives: [
     { path: 'order', reason: 'Delivery options are heavy for a recovering stomach.' },

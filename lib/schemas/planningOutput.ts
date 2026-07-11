@@ -38,6 +38,7 @@ export const PlanningRecommendationSchema = z.object({
     qty: z.string().min(1).max(60),
     inPantry: z.boolean(),
   }).strict()).max(40).optional(),
+  // 6–8 steps per cook recommendation (ISSUE-141, enforced via min/max)
   recipeSteps: z.array(z.object({
     step: z.number().int().min(1).max(40),
     instruction: z.string().min(1).max(400),
@@ -46,7 +47,7 @@ export const PlanningRecommendationSchema = z.object({
     // clip — normalize null → undefined so both spellings validate.
     youtubeTimestamp: z.string().regex(/^\d{1,3}:[0-5]\d$/).nullish()
       .transform((v) => v ?? undefined),
-  }).strict()).max(40).optional(),
+  }).strict()).min(6).max(8).optional(),
   youtubeVideoId: z.string().regex(/^[A-Za-z0-9_-]{11}$/).optional(),
 
   // ORDER path fields
@@ -88,6 +89,9 @@ export const PlanningAgentOutputSchema = z.object({
 
   if (out.primaryPath === 'cook' && (present(orderFields) || present(dineFields))) {
     ctx.addIssue({ code: 'custom', message: 'cook path must not carry order/dineout fields' })
+  }
+  if (out.primaryPath === 'cook' && r.recipeSteps === undefined) {
+    ctx.addIssue({ code: 'custom', message: 'cook path requires 6–8 recipe steps (ISSUE-141)' })
   }
   if (out.primaryPath === 'order' && (present(cookFields) || present(dineFields))) {
     ctx.addIssue({ code: 'custom', message: 'order path must not carry cook/dineout fields' })
