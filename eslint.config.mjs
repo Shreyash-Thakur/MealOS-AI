@@ -62,6 +62,14 @@ const eslintConfig = defineConfig([
       "no-restricted-imports": "off",
     },
   },
+  // Exempt YouTube client unit tests — same rationale as tests/mcp above:
+  // dedicated unit tests for lib/youtube/* must import the module under test.
+  {
+    files: ["tests/youtube/**/*.ts", "lib/youtube/**/*.ts"],
+    rules: {
+      "no-restricted-imports": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;
