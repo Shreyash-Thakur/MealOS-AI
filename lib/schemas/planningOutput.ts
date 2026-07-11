@@ -42,7 +42,10 @@ export const PlanningRecommendationSchema = z.object({
     step: z.number().int().min(1).max(40),
     instruction: z.string().min(1).max(400),
     durationMin: zMinutes,
-    youtubeTimestamp: z.string().regex(/^\d{1,3}:[0-5]\d$/).optional(),
+    // The planning prompt's worked example emits null for steps without a
+    // clip — normalize null → undefined so both spellings validate.
+    youtubeTimestamp: z.string().regex(/^\d{1,3}:[0-5]\d$/).nullish()
+      .transform((v) => v ?? undefined),
   }).strict()).max(40).optional(),
   youtubeVideoId: z.string().regex(/^[A-Za-z0-9_-]{11}$/).optional(),
 

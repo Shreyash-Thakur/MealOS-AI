@@ -22,7 +22,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk'
-import type { ZodSchema } from 'zod'
+import type { ZodSchema, ZodTypeDef } from 'zod'
 import { env } from '@/lib/env'
 import { AppError } from '@/lib/errors'
 import type { AgentConfig, AgentName, AgentRunResult } from '@/types/agents'
@@ -360,7 +360,8 @@ export type ParseResult<T> =
  */
 export function parseAndValidate<T>(
   rawOutput: string,
-  schema: ZodSchema<T>,
+  // Input type is unknown-tolerant: schemas may transform (e.g. null → undefined)
+  schema: ZodSchema<T, ZodTypeDef, unknown>,
 ): ParseResult<T> {
   const trimmed = rawOutput.trim()
 
@@ -400,8 +401,8 @@ export interface StructuredCallParams<T> {
   systemMessage: string
   /** User message with all {{variables}} already injected. */
   userMessage: string
-  /** Zod schema to validate the model output against. */
-  schema: ZodSchema<T>
+  /** Zod schema to validate the model output against (may transform its input). */
+  schema: ZodSchema<T, ZodTypeDef, unknown>
   /** Fallback returned with status 'schema_failed' when validation cannot recover. */
   fallbackOutput: T
   /**

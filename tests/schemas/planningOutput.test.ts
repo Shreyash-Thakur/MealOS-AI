@@ -385,6 +385,17 @@ describe('PlanningRecommendationSchema — recipe steps', () => {
     const result = PlanningRecommendationSchema.parse(stepWithTimestamp)
     expect(result.recipeSteps?.[0]?.youtubeTimestamp).toBe('1:30')
   })
+
+  it('accepts null youtubeTimestamp (prompt example emits null for steps without clips)', () => {
+    const stepWithNull = {
+      ...baseRecommendation,
+      recipeSteps: [
+        { step: 1, instruction: 'Boil water.', durationMin: 5, youtubeTimestamp: null },
+      ],
+    }
+    const result = PlanningRecommendationSchema.parse(stepWithNull)
+    expect(result.recipeSteps?.[0]?.youtubeTimestamp).toBeUndefined()
+  })
 })
 
 // ── degradedMode (fallback.md §1 schema addition) ────────────────────────────
