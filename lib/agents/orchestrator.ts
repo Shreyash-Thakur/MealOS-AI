@@ -350,6 +350,10 @@ export async function runOrchestrator(
     estimatedCost: plan.recommendation.estimatedCost as unknown as number,
     estimatedTimeMin: plan.recommendation.estimatedTime as unknown as number,
     recipeSteps: plan.recommendation.recipeSteps ?? null,
+    // Cache the recipe video on the row (M7 DoD; column is COOK-path only)
+    youtubeUrl: plan.primaryPath === 'cook' && toolResult.youtube
+      ? `https://www.youtube.com/watch?v=${toolResult.youtube.videoId}`
+      : null,
     swiggyData: plan.recommendation.restaurantId
       ? { restaurantId: plan.recommendation.restaurantId, restaurantName: plan.recommendation.restaurantName }
       : null,

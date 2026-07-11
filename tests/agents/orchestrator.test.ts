@@ -297,6 +297,36 @@ describe('runOrchestrator — happy path (no clarification)', () => {
 
     expect(mockTool.mock.calls[0]?.[0]).not.toHaveProperty('recipeName')
   })
+
+  it('caches the YouTube watch URL on the recommendation row (M7 DoD)', async () => {
+    mockTool.mockResolvedValue({
+      ...TOOL_OUTPUT,
+      youtube: {
+        videoId: 'dQw4w9WgXcQ' as never,
+        title: 'Perfect Dal Khichdi',
+        channelName: 'Home Cooking',
+        durationSeconds: 720 as never,
+        thumbnailUrl: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
+        viewCount: 1000,
+        publishedAt: '2025-01-15T10:00:00Z' as never,
+        keyTimestamps: [],
+      },
+    })
+
+    const send = vi.fn()
+    await runOrchestrator(INPUT, send)
+
+    expect(vi.mocked(createRecommendation).mock.calls[0]?.[0]).toMatchObject({
+      youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    })
+  })
+
+  it('stores null youtubeUrl when the tool returned no video', async () => {
+    const send = vi.fn()
+    await runOrchestrator(INPUT, send)
+
+    expect(vi.mocked(createRecommendation).mock.calls[0]?.[0]?.youtubeUrl ?? null).toBeNull()
+  })
 })
 
 // ── Clarification path ────────────────────────────────────────────────────────
