@@ -164,7 +164,6 @@ export async function runOrchestrator(
     Object.entries(memCtx).filter(([, v]) => v !== undefined),
   ) as Parameters<typeof runClarificationEngine>[0]['memoryFacts']
 
-  let passNumber = 1
   for (let pass = 1; pass <= 2; pass++) {
     const clarResult = await runClarificationEngine({
       situationType: situationContext.situationType,
@@ -223,7 +222,6 @@ export async function runOrchestrator(
     }
     await updateClarificationData(situationId, updatedData)
 
-    passNumber = pass
     if (pass === 2) break
   }
 
